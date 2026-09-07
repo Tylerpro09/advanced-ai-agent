@@ -1,0 +1,29 @@
+Advanced AI Agent v2.4 — Continuous Neural Learning + LoRA
+
+Added:
+- Trainable Experience Policy Network (PyTorch MLP) updated from +/- experience feedback.
+- Policy prediction injected into future agent prompts as a learned prior.
+- Versioned PEFT/LoRA continual trainer from positively-rated experiences.
+- Sensitive-pattern filtering before LoRA dataset creation.
+- Validation holdout and anti-regression quality gate before automatic activation.
+- Adapter registry, activation and rollback.
+- Optional automatic LoRA training every N qualifying experiences (disabled by default).
+- transformers_peft in-process inference backend for direct adapter use.
+- Restore a user's active PEFT adapter after restart with HF_ADAPTER_USER.
+- Optional llama.cpp-compatible GGUF LoRA loading via LOCAL_LORA_PATH.
+- Helper to convert PEFT LoRA adapters using llama.cpp convert_lora_to_gguf.py.
+- Learning status/train controls in the PWA.
+- LoRA installation scripts and training CLI.
+
+Preserved:
+- Embedded GGUF inference.
+- Neural semantic memory.
+- Episodic experience memory.
+- RAG, tools, plugins, REST/WebSocket, PWA and optional connectors.
+
+Safety/quality behavior:
+- Base model is never overwritten.
+- Failed validation adapters are saved but not auto-activated.
+- Manual activation of a failed-quality adapter requires force=true via API.
+- Heavy LoRA training is disabled by default.
+- Fast experience-policy learning works independently of GGUF trainability.

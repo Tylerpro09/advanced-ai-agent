@@ -1,0 +1,15 @@
+Advanced AI Agent v2.5.0 — Reliability & Hardening
+
+- Project-relative paths no longer depend on the process working directory.
+- SQLite connections use WAL, busy_timeout and consistent foreign-key settings.
+- Embedded GGUF and Transformers inference is serialized to avoid concurrent model access races.
+- Tool call loop has a configurable limit and forces a final text-only answer after the limit.
+- Tool outputs are bounded; tool numeric limits are clamped safely.
+- HTTP allowlist adds private/loopback/link-local/reserved network blocking by default.
+- Temporary uploads are removed after RAG ingestion, vision and STT use.
+- Embedded mode no longer falsely reports vision/STT/TTS as configured without specialist endpoints.
+- Plugin loading now validates schemas, handles duplicate names and reports plugin load errors.
+- Experience Policy Network gets a NumPy neural fallback when PyTorch is unavailable.
+- Adapter registry writes are serialized; LoRA training cannot overlap in one process.
+- Added `doctor.py`, `/ready`, hardening tests, GitHub Actions CI, Dependabot and `.gitignore`.
+- Centralized application version in `app/version.py`.

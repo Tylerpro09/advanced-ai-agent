@@ -1,0 +1,4 @@
+# In-process GGUF inference. Python 3.11/3.12 is recommended for easiest wheel availability.
+llama-cpp-python>=0.3.8
+# Optional helper used by download_model.py for Hugging Face model files.
+huggingface-hub>=0.27

@@ -1,0 +1,36 @@
+# Secrets / local config
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Runtime data and trained personal state
+data/
+
+# Large model weights / adapters
+models/*.gguf
+models/*.bin
+models/*.safetensors
+models/*.pt
+models/*.pth
+!models/README.txt
+
+# Logs / temp
+*.log
+*.tmp
+*.part
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

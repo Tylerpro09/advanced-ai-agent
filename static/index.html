@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#111827" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <title>Advanced AI Agent</title>
+  <style>
+    :root{font-family:system-ui,-apple-system,Segoe UI,sans-serif;color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#0b1020;color:#eef2ff}.app{max-width:900px;margin:auto;min-height:100vh;display:flex;flex-direction:column}.top{padding:18px 16px;border-bottom:1px solid #26304a;position:sticky;top:0;background:#0b1020e8;backdrop-filter:blur(12px)}.top b{font-size:20px}.top small{display:block;color:#9ca3af;margin-top:3px}.msgs{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px}.m{padding:12px 14px;border-radius:16px;max-width:86%;white-space:pre-wrap;line-height:1.45}.u{align-self:flex-end;background:#2563eb}.a{align-self:flex-start;background:#1f2937}.bar{display:grid;grid-template-columns:1fr auto;gap:8px;padding:12px;position:sticky;bottom:0;background:#0b1020;border-top:1px solid #26304a}textarea{resize:none;min-height:52px;max-height:160px;border:1px solid #374151;border-radius:14px;background:#111827;color:white;padding:13px;font:inherit}button{border:0;border-radius:14px;padding:0 18px;background:#4f46e5;color:white;font-weight:700}.tools{display:flex;gap:8px;padding:0 12px 8px;flex-wrap:wrap}.tools button{padding:8px 12px;background:#1f2937}.status{font-size:12px;color:#9ca3af;padding:0 16px 8px}.feedback{display:flex;gap:6px;margin-top:8px}.feedback button{padding:4px 9px;border-radius:9px;background:#374151;font-size:13px}.hidden{display:none}
+  </style>
+</head>
+<body><main class="app">
+  <header class="top"><b>Advanced AI Agent</b><small>Memoria neuronal · experiencias · RAG · herramientas · voz · visión &nbsp; <button id="tokenBtn" style="padding:4px 8px;border-radius:8px;background:#1f2937">🔐 Token</button></small></header>
+  <section id="msgs" class="msgs"><div class="m a">Hola. Soy tu agente local. Puedo usar memoria y documentos indexados si el servidor está configurado.</div></section>
+  <div class="tools">
+    <button id="voice">🎙️ Transcribir</button><button id="image">🖼️ Visión</button><button id="doc">📚 Añadir documento</button><button id="learnStatus">🧠 Aprendizaje</button><button id="trainLora">🧬 Entrenar LoRA</button>
+    <input id="audioFile" class="hidden" type="file" accept="audio/*"/><input id="imageFile" class="hidden" type="file" accept="image/*"/><input id="docFile" class="hidden" type="file" accept=".txt,.md,.json,.csv,.pdf,.py,.js,.html,.yaml,.yml,.toml,.ini,.log"/>
+  </div>
+  <div id="status" class="status"></div>
+  <form id="form" class="bar"><textarea id="q" placeholder="Escribe un mensaje…"></textarea><button>Enviar</button></form>
+</main>
+<script>
+const userId=localStorage.userId||(localStorage.userId=crypto.randomUUID()), conv='main'; let apiToken=localStorage.apiToken||''; const authHeaders=()=>apiToken?{'authorization':'Bearer '+apiToken}:{}; document.querySelector('#tokenBtn').onclick=()=>{const t=prompt('API_TOKEN del servidor (vacío para quitarlo):',apiToken)||''; apiToken=t.trim(); localStorage.apiToken=apiToken;};
+const msgs=document.querySelector('#msgs'), q=document.querySelector('#q'), statusEl=document.querySelector('#status');
+function add(text,who){const d=document.createElement('div');d.className='m '+who;d.textContent=text;msgs.appendChild(d);scrollTo(0,document.body.scrollHeight);return d}
+async function rateExperience(id,reward,box){if(!id)return;const outcome=reward>0?'El usuario indicó que fue útil':'El usuario indicó que no fue útil';const lesson=reward>0?'Conservar este enfoque para situaciones parecidas.':'No repetir automáticamente este enfoque; buscar una alternativa y revisar qué falló.';const r=await fetch('/v1/experiences/'+id+'/feedback',{method:'POST',headers:{'content-type':'application/json',...authHeaders()},body:JSON.stringify({user_id:userId,reward,outcome,lesson})});if(r.ok){box.textContent=reward>0?'✓ Experiencia positiva guardada':'✓ Experiencia negativa guardada'}}
+function addAssistant(text,experienceId){const d=add(text,'a');if(experienceId){const f=document.createElement('div');f.className='feedback';const up=document.createElement('button'),down=document.createElement('button');up.type=down.type='button';up.textContent='👍 Sirvió';down.textContent='👎 Falló';up.onclick=()=>rateExperience(experienceId,1,f);down.onclick=()=>rateExperience(experienceId,-1,f);f.append(up,down);d.appendChild(f)}return d}
+async function chat(text){add(text,'u');statusEl.textContent='Pensando…';const r=await fetch('/v1/agent/chat',{method:'POST',headers:{'content-type':'application/json',...authHeaders()},body:JSON.stringify({user_id:userId,conversation_id:conv,message:text})});const j=await r.json();addAssistant(j.answer||j.detail||'Error',j.experience_id);statusEl.textContent=j.tool_rounds?`Herramientas usadas: ${j.tool_rounds}`:''}
+document.querySelector('#form').onsubmit=e=>{e.preventDefault();const t=q.value.trim();if(t){q.value='';chat(t)}};
+q.onkeydown=e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();document.querySelector('#form').requestSubmit()}};
+function picker(button,input){document.querySelector(button).onclick=()=>document.querySelector(input).click()}
+picker('#voice','#audioFile');picker('#image','#imageFile');picker('#doc','#docFile');
+document.querySelector('#learnStatus').onclick=async()=>{statusEl.textContent='Consultando aprendizaje…';const r=await fetch('/v1/learning/status?user_id='+encodeURIComponent(userId),{headers:authHeaders()});const j=await r.json();const p=j.policy||{},l=j.lora||{};add(`Red de experiencia: ${p.trained?'entrenada':'sin entrenar'} · muestras: ${p.samples||0}\nLoRA: ${l.enabled?'habilitado':'deshabilitado'} · versiones: ${(l.versions||[]).length}`, 'a');statusEl.textContent=''};
+document.querySelector('#trainLora').onclick=async()=>{if(!confirm('Entrenar un LoRA con tus experiencias positivas puede usar bastante RAM/VRAM. ¿Continuar?'))return;statusEl.textContent='Entrenando LoRA…';const r=await fetch('/v1/learning/lora/train',{method:'POST',headers:{'content-type':'application/json',...authHeaders()},body:JSON.stringify({user_id:userId,activate:true})});const j=await r.json();if(r.ok){add(`LoRA creado: ${j.adapter?.id||'nuevo adaptador'}\nExperiencias: ${j.adapter?.examples||0}`, 'a')}else{add(j.detail||'No se pudo entrenar LoRA','a')}statusEl.textContent=''};
+document.querySelector('#audioFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;statusEl.textContent='Transcribiendo…';const fd=new FormData();fd.append('file',f);const r=await fetch('/v1/audio/transcribe',{method:'POST',headers:authHeaders(),body:fd});const j=await r.json();q.value=j.text||'';statusEl.textContent=''};
+document.querySelector('#imageFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;statusEl.textContent='Analizando imagen…';const fd=new FormData();fd.append('file',f);fd.append('prompt','Analiza esta imagen y responde en español.');const r=await fetch('/v1/vision/analyze',{method:'POST',headers:authHeaders(),body:fd});const j=await r.json();add(j.answer||j.detail,'a');statusEl.textContent=''};
+document.querySelector('#docFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;statusEl.textContent='Indexando documento…';const fd=new FormData();fd.append('user_id',userId);fd.append('file',f);const r=await fetch('/v1/knowledge/upload',{method:'POST',headers:authHeaders(),body:fd});const j=await r.json();statusEl.textContent=j.ok?`Documento indexado: ${j.chunks} fragmentos`:(j.detail||'Error')};
+if('serviceWorker'in navigator)navigator.serviceWorker.register('/sw.js').catch(()=>{});
+</script></body></html>
