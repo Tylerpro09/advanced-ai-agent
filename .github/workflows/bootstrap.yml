@@ -1,0 +1,30 @@
+name: Bootstrap repository
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/bootstrap.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Expand project
+        run: python bootstrap_repo.py
+      - name: Commit full project
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: publish Advanced AI Agent v2.5"
+          git push origin main
