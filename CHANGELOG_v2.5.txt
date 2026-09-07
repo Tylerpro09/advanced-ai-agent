@@ -13,3 +13,4 @@ Advanced AI Agent v2.5.0 — Reliability & Hardening
 - Adapter registry writes are serialized; LoRA training cannot overlap in one process.
 - Added `doctor.py`, `/ready`, hardening tests, GitHub Actions CI, Dependabot and `.gitignore`.
 - Centralized application version in `app/version.py`.
+- Published to GitHub with the v2.5 hardening suite and CI configuration enabled.
