@@ -1,0 +1,9 @@
+Advanced AI Agent v2.8.1 — Reliable Instant Feedback
+
+- Fixed 👍/👎 feedback appearing unresponsive with local LM Studio models.
+- Ratings are committed to SQLite immediately before expensive learning work starts.
+- Neural reindexing, human-like reflection, developmental learning, experience-policy training and optional auto-LoRA now run after the HTTP response.
+- The feedback endpoint returns saved=true and learning_queued=true immediately.
+- Background learning failures are logged but never undo a successfully saved rating.
+- Added task retention so queued learning jobs are not silently lost.
+- Added test_v281_feedback.py to verify route precedence and actual reward persistence in SQLite.
