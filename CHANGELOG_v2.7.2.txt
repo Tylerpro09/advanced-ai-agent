@@ -1,0 +1,11 @@
+Advanced AI Agent v2.7.2 — LM Studio + Better Training
+
+- LM Studio/OpenAI-compatible is now the default model backend.
+- AI_MODEL=auto discovers the first model exposed by GET /v1/models.
+- Clear errors when LM Studio is unreachable or no model is visible.
+- start_windows.bat detects LM Studio and automatically falls back to it when an old .env requests embedded GGUF but model.gguf is missing.
+- Added train_better.py to refit the experience-policy network, consolidate rated episodes into cognitive learning, and export training data.
+- Added train_better_windows.bat for one-command Windows learning consolidation and optional real LoRA training.
+- install_training_windows.bat now installs into the project .venv.
+- Real LoRA weight training remains separate from LM Studio GGUF inference and requires the original Hugging Face base model.
+- Added LM Studio provider regression test to CI.
