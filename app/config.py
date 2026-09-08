@@ -67,7 +67,6 @@ class Settings(BaseSettings):
     experience_recency_half_life_days: float = 90.0
     experience_auto_store: bool = True
 
-    # Human-inspired cognitive learning (v2.6).
     human_like_learning_enabled: bool = True
     human_learning_results: int = 6
     human_consolidation_similarity: float = 0.84
@@ -82,14 +81,11 @@ class Settings(BaseSettings):
     human_low_confidence_threshold: float = 0.38
     human_reflection_enabled: bool = True
 
-    # Developmental learning (v2.7).
-    # Adds curiosity, persistent learning goals, developmental stages, analogy transfer
-    # and deliberate practice. Autonomy here changes learning strategy, never safety policy.
     developmental_learning_enabled: bool = True
     developmental_auto_goals: bool = True
     developmental_max_open_goals: int = 12
     developmental_goal_curiosity_threshold: float = 0.70
-    developmental_goal_mastery_successes: int = 3
+    developmental_goal_mastery_successes: int = 4
     developmental_curiosity_novelty_weight: float = 0.50
     developmental_curiosity_uncertainty_weight: float = 0.35
     developmental_curiosity_gap_weight: float = 0.15
