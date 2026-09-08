@@ -1,0 +1,13 @@
+Advanced AI Agent v2.9.0 — Explicit Teaching + Brain Controls
+
+- Added explicit answer correction: each assistant response can now be taught a preferred replacement with ✏️.
+- Explicit corrections mark the rejected response as negative and store the user's replacement as a strong positive training example.
+- Corrections feed cognitive learning, developmental learning, the experience-policy network and future LoRA datasets.
+- Negative feedback can include a user explanation of what was wrong.
+- Added GET /v1/brain/dashboard for inspectable model/memory/experience/policy/developmental status.
+- Added POST /v1/brain/consolidate to retrain the small experience-policy network and export positive training examples.
+- Added POST /v1/conversations/{conversation_id}/clear to reset short-term conversation context without deleting long-term memory.
+- Web UI now includes: Brain, Goals, Memories, Model, Consolidate, New Chat, Voice, Vision, Documents and LoRA controls.
+- Feedback UI now visibly confirms successful learning or surfaces endpoint errors.
+- PWA cache bumped to agent-v290 and now removes old caches on activation.
+- Added test_v290_features.py and CI coverage for correction learning, dashboard, consolidation and conversation reset.
