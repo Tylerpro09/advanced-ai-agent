@@ -1,0 +1,15 @@
+Advanced AI Agent v2.6.0 — Human-Like Cognitive Learning
+
+- Added HumanLearningSystem: episodic experiences consolidate into semantic concepts, reusable procedures and avoidance memories.
+- Explicit +/- feedback now triggers reflection and cognitive consolidation through the existing feedback API.
+- Repeated similar experiences reinforce existing knowledge instead of producing endless duplicates.
+- Added salience: strong or novel outcomes become more memorable.
+- Added retrieval practice: recalled cognitive memories are strengthened slightly.
+- Added a forgetting curve whose half-life grows with memory strength.
+- Added novelty estimation and metacognitive confidence.
+- Agent chooses a cognitive mode: explore, reason, apply_skill or caution.
+- Learned procedures and cautions are injected into future prompts as evidence, never as higher-priority instructions.
+- Added filtering to avoid consolidating obvious passwords, API keys, tokens, private keys and payment secrets.
+- Added test_human_learning.py.
+
+This is human-inspired learning architecture; it does not imply consciousness, emotions or human-equivalent cognition.
