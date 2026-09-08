@@ -1,0 +1,14 @@
+Advanced AI Agent v2.7.1 — Developmental Learning Hardening
+
+- Restores the developmental-learning API routes on v2.7 server layouts where they were documented but not actually mounted.
+- Hardens the Python practice validator against dangerous builtin aliasing such as `f = open; f(...)`.
+- Rejects suspicious dunder import aliases in the practice sandbox.
+- Serializes developmental XP/profile, feedback and analogy updates to prevent lost updates under concurrency.
+- Serializes deliberate practice per user/goal so simultaneous long model calls cannot overwrite counters with stale state.
+- Ensures analogy recording creates the developmental profile before incrementing its counters.
+- Enforces DEVELOPMENTAL_MAX_OPEN_GOALS for manual and autonomous goal creation while still allowing duplicate-goal reinforcement.
+- Keeps developmental API authentication under the existing /v1 Bearer middleware.
+- Adds `test_v271_hardening.py` and runs it from GitHub Actions CI.
+- Local full-suite validation passes with 0 diagnostic errors.
+
+Note: no non-trivial software can honestly be guaranteed to contain zero future bugs. v2.7.1 adds regression coverage for every concrete issue found in this hardening pass.
