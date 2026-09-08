@@ -20,7 +20,6 @@ from app.core.agent import Agent
 from app.core.media import MediaClient
 from app.core.memory import MemoryStore
 from app.core.experience import ExperienceStore
-from app.core.experience_policy import ExperiencePolicyNetwork
 from app.core.continual_learning import AdapterRegistry, LoRAContinualTrainer
 from app.core.neural_memory import NeuralMemoryStore
 from app.core.rag import RAGStore
@@ -30,7 +29,7 @@ logger = logging.getLogger("advanced_ai_agent")
 app = FastAPI(
     title=APP_NAME,
     version=APP_VERSION,
-    description="Local-first AI agent with embedded GGUF, trainable experience network, versioned LoRA continual learning, neural/episodic memory, RAG and tools.",
+    description="Local-first AI agent with developmental/human-like learning, neural memory, embedded GGUF, LoRA, RAG and tools.",
 )
 
 memory = MemoryStore(settings.database_path)
@@ -51,7 +50,6 @@ async def _auto_train_lora(user_id: str) -> None:
         if result.get("activated") and hasattr(agent.provider, "set_adapter") and adapter.get("path"):
             agent.provider.set_adapter(adapter["path"])
     except Exception:
-        # Auto-training failures must not break chat/feedback, but they must be observable.
         logger.exception("Automatic LoRA training failed for user %s", user_id)
     finally:
         auto_lora_users.discard(user_id)
@@ -91,7 +89,10 @@ def _main_backend_has_http_api() -> bool:
 
 
 def _vision_configured() -> bool:
-    return bool((settings.vision_base_url and settings.vision_model) or (_main_backend_has_http_api() and settings.ai_base_url and (settings.vision_model or settings.ai_model)))
+    return bool(
+        (settings.vision_base_url and settings.vision_model)
+        or (_main_backend_has_http_api() and settings.ai_base_url and (settings.vision_model or settings.ai_model))
+    )
 
 
 def _stt_configured() -> bool:
@@ -148,6 +149,21 @@ class AdapterActionRequest(BaseModel):
     force: bool = False
 
 
+class DevelopmentGoalCreate(BaseModel):
+    user_id: str = Field(min_length=1, max_length=120)
+    question: str = Field(min_length=1, max_length=2000)
+    title: str = Field(default="", max_length=160)
+    curiosity: float = Field(default=0.8, ge=0.0, le=1.0)
+    confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+
+
+class DevelopmentPracticeRequest(BaseModel):
+    user_id: str = Field(min_length=1, max_length=120)
+
+
+class SandboxValidateRequest(BaseModel):
+    code: str = Field(min_length=1, max_length=20000)
+
 
 def _safe_name(name: str) -> str:
     name = os.path.basename(name or "upload.bin")
@@ -200,7 +216,18 @@ def health() -> dict:
             "neural_memory": neural_memory.stats(),
             "experience_memory": experiences.stats(),
             "experience_policy": {"enabled": settings.experience_policy_enabled},
-            "continual_learning": {"enabled": settings.continual_learning_enabled, "base_model": settings.lora_base_model},
+            "human_like_learning": {"enabled": settings.human_like_learning_enabled},
+            "developmental_learning": {
+                "enabled": settings.developmental_learning_enabled,
+                "auto_goals": settings.developmental_auto_goals,
+                "auto_analogies": settings.developmental_auto_analogies,
+                "auto_practice": settings.developmental_auto_practice,
+                "sandbox_execution": settings.developmental_sandbox_execution_enabled,
+            },
+            "continual_learning": {
+                "enabled": settings.continual_learning_enabled,
+                "base_model": settings.lora_base_model,
+            },
             "rag": True,
             "tools": settings.enable_tools,
             "plugins": settings.enable_plugins,
@@ -241,7 +268,11 @@ async def chat(req: ChatRequest) -> dict:
 
 @app.websocket("/v1/ws/chat")
 async def ws_chat(ws: WebSocket):
-    if settings.api_token and ws.headers.get("authorization", "") != f"Bearer {settings.api_token}" and ws.query_params.get("token") != settings.api_token:
+    if (
+        settings.api_token
+        and ws.headers.get("authorization", "") != f"Bearer {settings.api_token}"
+        and ws.query_params.get("token") != settings.api_token
+    ):
         await ws.close(code=1008)
         return
     await ws.accept()
@@ -323,7 +354,6 @@ async def experience_feedback(experience_id: int, req: ExperienceFeedback) -> di
         raise HTTPException(404, "Experience not found")
     policy = None
     if settings.experience_policy_enabled:
-        # Small local update is intentionally performed after explicit feedback.
         policy = await asyncio.to_thread(experience_policy.train_user, req.user_id)
 
     auto_lora_queued = False
@@ -339,10 +369,13 @@ async def experience_feedback(experience_id: int, req: ExperienceFeedback) -> di
             auto_lora_users.add(req.user_id)
             asyncio.create_task(_auto_train_lora(req.user_id))
             auto_lora_queued = True
+
     return {
         "ok": True,
         "experience_id": experience_id,
         "experience_policy": policy,
+        "human_learning": agent.human_learning.stats(req.user_id),
+        "developmental_learning": agent.development.profile(req.user_id),
         "auto_lora_queued": auto_lora_queued,
     }
 
@@ -361,8 +394,66 @@ async def learning_policy_train(req: AdapterActionRequest) -> dict:
 def learning_status(user_id: str) -> dict:
     return {
         "policy": experience_policy.status(user_id),
+        "human": agent.human_learning.stats(user_id),
+        "developmental": agent.development.profile(user_id),
         "lora": lora_trainer.status(user_id),
         "model_backend": settings.model_backend,
+    }
+
+
+@app.get("/v1/development/status")
+def development_status(user_id: str) -> dict:
+    return {
+        "profile": agent.development.profile(user_id),
+        "human_learning": agent.human_learning.stats(user_id),
+        "goals": [asdict(x) for x in agent.development.goals(user_id, "open", 20)],
+    }
+
+
+@app.get("/v1/development/goals")
+def development_goals(
+    user_id: str,
+    status: str = Query(default="open", pattern="^(open|mastered|paused|all)$"),
+    limit: int = Query(default=20, ge=1, le=100),
+) -> dict:
+    return {"items": [asdict(x) for x in agent.development.goals(user_id, status, limit)]}
+
+
+@app.post("/v1/development/goals")
+def create_development_goal(req: DevelopmentGoalCreate) -> dict:
+    goal_id = agent.development.create_goal(req.user_id, req.question, req.curiosity, req.confidence, req.title)
+    if goal_id is None:
+        raise HTTPException(400, "Could not create learning goal")
+    return {"ok": True, "goal_id": goal_id, "profile": agent.development.profile(req.user_id)}
+
+
+@app.post("/v1/development/goals/{goal_id}/practice")
+async def practice_development_goal(goal_id: int, req: DevelopmentPracticeRequest) -> dict:
+    try:
+        return await agent.development.practice_goal(req.user_id, goal_id, agent.provider)
+    except ValueError as exc:
+        raise HTTPException(404, str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(400, f"Developmental practice failed: {exc}") from exc
+
+
+@app.get("/v1/development/practice")
+def development_practice_history(
+    user_id: str,
+    goal_id: int | None = None,
+    limit: int = Query(default=50, ge=1, le=200),
+) -> dict:
+    return {"items": [asdict(x) for x in agent.development.practice_history(user_id, goal_id, limit)]}
+
+
+@app.post("/v1/development/sandbox/validate")
+def development_sandbox_validate(req: SandboxValidateRequest) -> dict:
+    ok, reason = agent.development.sandbox.validate(req.code)
+    return {
+        "ok": ok,
+        "reason": reason,
+        "execution_enabled": settings.developmental_sandbox_execution_enabled,
+        "note": "Validator is not a hard OS security boundary.",
     }
 
 
@@ -371,8 +462,6 @@ async def learning_lora_train(req: LoRATrainRequest) -> dict:
     try:
         result = await asyncio.to_thread(lora_trainer.train, req.user_id, req.activate)
         adapter = result.get("adapter") or {}
-        # If this process is already running the direct PEFT backend, apply the freshly
-        # activated adapter without changing the base model. Reload remains lazy.
         if result.get("activated") and hasattr(agent.provider, "set_adapter") and adapter.get("path"):
             agent.provider.set_adapter(adapter["path"])
         return result
@@ -412,8 +501,7 @@ def learning_lora_rollback(req: AdapterActionRequest) -> dict:
 
 @app.post("/v1/experiences/export")
 def export_experiences(req: ExperienceExport) -> dict:
-    safe_user = re.sub(r"[^A-Za-z0-9._-]", "_", req.user_id)[:100]
-    safe_user = safe_user or "user"
+    safe_user = re.sub(r"[^A-Za-z0-9._-]", "_", req.user_id)[:100] or "user"
     path = settings.project_root / "data" / "experience_exports" / f"{safe_user}.jsonl"
     count = experiences.export_training_jsonl(req.user_id, str(path), req.min_reward)
     return {"ok": True, "items": count, "path": str(path)}
@@ -518,11 +606,3 @@ def manifest():
     if not path.is_file():
         raise HTTPException(404, "Manifest not found")
     return FileResponse(path, media_type="application/manifest+json")
-
-
-@app.get("/sw.js")
-def service_worker():
-    path = static_dir / "sw.js"
-    if not path.is_file():
-        raise HTTPException(404, "Service worker not found")
-    return FileResponse(path, media_type="application/javascript")
