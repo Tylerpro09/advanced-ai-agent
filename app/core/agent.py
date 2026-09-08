@@ -34,6 +34,18 @@ class Agent:
         self.provider = create_chat_provider()
         self.plugins = PluginManager() if settings.enable_plugins else None
         self.tools = ToolRegistry(memory, rag, self.plugins, self.neural_memory, self.experiences)
+        # The API owns this same ExperienceStore. Wrapping feedback means every explicit rating
+        # automatically becomes reflection + cognitive consolidation without changing old clients.
+        self._base_experience_feedback = self.experiences.feedback
+        self.experiences.feedback = self._feedback_and_learn  # type: ignore[method-assign]
+
+    async def _feedback_and_learn(
+        self, user_id: str, experience_id: int, reward: float, outcome: str = "", lesson: str = ""
+    ) -> bool:
+        ok = await self._base_experience_feedback(user_id, experience_id, reward, outcome, lesson)
+        if ok and settings.human_like_learning_enabled:
+            await self.learn_from_feedback(user_id, experience_id)
+        return ok
 
     async def chat(self, user_id: str, conversation_id: str, user_text: str) -> dict[str, Any]:
         memories = await self.neural_memory.hybrid_search(user_id, user_text, settings.memory_results)
@@ -173,9 +185,8 @@ class Agent:
             prompt = [
                 {"role": "system", "content": (
                     "Reflect on a rated AI experience and extract reusable learning. Return ONLY one JSON object with: "
-                    "title (short), trigger (when this knowledge applies), principle (general lesson), "
-                    "procedure (array of concrete steps, empty if not appropriate), mistake (what to avoid), novelty (0..1). "
-                    "Do not copy or preserve passwords, API keys, tokens, private keys, payment data, or unrelated personal secrets. "
+                    "title (short), trigger (when this knowledge applies), principle (general lesson), procedure (array of concrete steps, empty if not appropriate), "
+                    "mistake (what to avoid), novelty (0..1). Do not copy or preserve passwords, API keys, tokens, private keys, payment data, or unrelated personal secrets. "
                     "Do not claim feelings or consciousness."
                 )},
                 {"role": "user", "content": (
