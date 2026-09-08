@@ -1,0 +1,13 @@
+Advanced AI Agent v2.8.0 — Conversational Presence
+
+- LM Studio conversations now receive a dedicated conversational-presence instruction.
+- Short greetings no longer default to customer-support phrases such as "¿En qué puedo ayudarte hoy?".
+- Existing conversation context is treated as continuity instead of restarting the relationship each turn.
+- Casual turns are kept short and natural.
+- User language, brevity and energy are mirrored without pretending human feelings or experiences.
+- Frustration is acknowledged specifically instead of with canned empathy.
+- A fallback catches canned greeting responses from weaker local models.
+- Feedback UI is now subtle icon-only 👍 / 👎 instead of "Sirvió / Falló".
+- Rating confirmation no longer prints robotic training messages into the conversation.
+- Initial web greeting reduced to a simple "Hey 👋".
+- Added test_conversational_presence.py and CI regression coverage.
