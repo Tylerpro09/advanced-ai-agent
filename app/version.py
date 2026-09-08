@@ -1,8 +1,10 @@
 from app.v271_hardening import install as _install_v271_hardening
 from app.v281_feedback import install as _install_v281_feedback
+from app.v290_features import install as _install_v290_features
 
 _install_v271_hardening()
 _install_v281_feedback()
+_install_v290_features()
 
 APP_NAME = "Advanced AI Agent"
-APP_VERSION = "2.8.1"
+APP_VERSION = "2.9.0"
