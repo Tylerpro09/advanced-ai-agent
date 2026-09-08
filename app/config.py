@@ -10,10 +10,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=str(PROJECT_ROOT / ".env"), env_file_encoding="utf-8", extra="ignore")
 
-    model_backend: str = "embedded_gguf"
+    # LM Studio/OpenAI-compatible is the zero-config default. Set embedded_gguf
+    # explicitly when you want this process to load models/model.gguf itself.
+    model_backend: str = "openai_compatible"
     ai_base_url: str = "http://127.0.0.1:1234/v1"
-    ai_api_key: str = "local-key"
-    ai_model: str = "local-model"
+    ai_api_key: str = "lm-studio"
+    # "auto" discovers the first model exposed by GET /v1/models.
+    ai_model: str = "auto"
     ai_temperature: float = 0.35
     ai_timeout_seconds: float = 300.0
 
