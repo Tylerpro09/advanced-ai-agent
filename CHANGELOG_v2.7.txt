@@ -1,0 +1,26 @@
+Advanced AI Agent v2.7.0 — Developmental Learning
+
+Added:
+- Developmental stages: seed -> explorer -> apprentice -> practitioner -> specialist.
+- Curiosity score based on novelty, uncertainty and lack of known patterns.
+- Persistent self-generated learning goals with priority, confidence, attempts and mastery state.
+- XP/progress from explicit feedback and deliberate practice.
+- Cross-domain analogy generation with explicit limitations and stored usefulness.
+- Deliberate conceptual practice generated and graded by the model.
+- Restricted Python practice validator and optional soft-sandbox execution.
+- Sandbox denies unsafe imports, dangerous builtins and dunder traversal; execution is disabled by default.
+- New API endpoints for developmental status, goals, practice history and sandbox validation.
+- Secret filtering prevents obvious credentials/tokens from becoming developmental goals or analogy memory.
+- Human-like v2.6 cognitive memory remains the source for concepts, procedures, cautions and metacognitive state.
+- Developmental learning never overrides safety, authorization, user intent or evidence.
+
+Defaults:
+- Auto goal formation: enabled.
+- Auto analogy transfer: enabled after apprentice stage and high curiosity.
+- Auto practice: disabled to avoid surprise model usage.
+- Python sandbox execution: disabled; validation only until explicitly enabled.
+- Goal mastery: four consistent successful outcomes plus sufficient confidence.
+
+Validation:
+- Existing v2.5/v2.6 tests plus test_developmental_learning.py pass locally.
+- doctor.py reports 0 errors (model-weight/encoder availability may remain optional warnings).
