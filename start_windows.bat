@@ -5,6 +5,8 @@ title Advanced AI Agent - Windows Launcher
 
 set "PY_LAUNCH="
 set "VENV_PY=%CD%\.venv\Scripts\python.exe"
+set "PYTHONUTF8=1"
+set "PYTHONIOENCODING=utf-8"
 
 echo ============================================================
 echo   Advanced AI Agent - Windows launcher
@@ -54,7 +56,10 @@ if errorlevel 1 (
   echo [WARN] Existing .venv is invalid or uses an old Python. Recreating it ...
   rmdir /s /q ".venv" >nul 2>&1
   %PY_LAUNCH% -m venv .venv
-  if errorlevel 1 goto :fail
+  if errorlevel 1 (
+    echo [ERROR] Could not recreate .venv.
+    goto :fail
+  )
 )
 
 echo [OK] Virtual environment ready.
@@ -87,9 +92,8 @@ if errorlevel 1 (
 )
 
 rem ------------------------------------------------------------
-rem Print configuration and warnings, but DO NOT block web startup
-rem just because a model file/runtime is not ready yet. The GGUF
-rem provider is lazy-loaded, so /health, /ready and the UI can run.
+rem Run non-blocking diagnostics. Missing GGUF/model runtime is a
+rem warning at startup because the provider loads the model lazily.
 rem ------------------------------------------------------------
 echo.
 echo [INFO] Configuration diagnostics:
@@ -107,12 +111,10 @@ if not defined AAA_PORT set "AAA_PORT=8000"
 echo.
 echo ============================================================
 echo [START] Server starting at http://127.0.0.1:%AAA_PORT%
-echo [INFO] Press Ctrl+C to stop it.
+echo [INFO] Open that address in your browser.
+echo [INFO] Press Ctrl+C to stop the server.
 echo ============================================================
 echo.
-
-rem Open the UI after a short delay without blocking the server process.
-start "" /b cmd /c "timeout /t 3 /nobreak ^>nul ^& start "" http://127.0.0.1:%AAA_PORT%"
 
 "%VENV_PY%" run.py
 set "SERVER_EXIT=%ERRORLEVEL%"
