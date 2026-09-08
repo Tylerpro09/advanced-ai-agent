@@ -37,6 +37,7 @@ jobs:
           python test_developmental_learning.py
           python test_v271_hardening.py
           python test_v281_feedback.py
+          python test_v290_features.py
           python test_lmstudio_provider.py
           python test_conversational_presence.py
           python test_embedded_model.py
