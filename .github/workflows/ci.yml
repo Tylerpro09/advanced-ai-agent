@@ -35,6 +35,7 @@ jobs:
           python test_learning_system.py
           python test_human_learning.py
           python test_developmental_learning.py
+          python test_v271_hardening.py
           python test_embedded_model.py
           python test_hardening.py
           python test_api.py
